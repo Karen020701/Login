@@ -3,6 +3,7 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { clientPool, veterinaryPool } = require('./Config/db');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
@@ -83,6 +84,12 @@ app.post('/veterinarian/login', async (req, res) => {
     }
 });
 
+
+
+
+app.use(cors({
+  origin: 'https://frontend-app-le95d.ondigitalocean.app/'
+}));
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

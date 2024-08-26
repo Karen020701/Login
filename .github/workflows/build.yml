@@ -1,0 +1,45 @@
+name: Deploy Microservice to DigitalOcean Droplet
+
+on:
+    push:
+      branches: [ "main" ]
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKERHUB_IMAGE: apisession
+  DROPLET_IP: ${{ secrets.DROPLET_IP }}
+  DROPLET_USER: root
+  DROPLET_PASSWORD: ${{ secrets.DROPLET_PASSWORD }}
+  DOCKER_PORT: 3001
+
+jobs:
+  deploy:
+    name: Deploy to DigitalOcean Droplet
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build, tag, and push Docker image
+        run: |
+          docker build -t ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_IMAGE }}:latest .
+          docker push ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_IMAGE }}:latest
+
+      - name: Install SSHpass (para autenticación con contraseña)
+        run: sudo apt-get install sshpass
+
+      - name: Deploy to DigitalOcean Droplet
+        run: |
+          sshpass -p "${{ env.DROPLET_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ env.DROPLET_USER }}@${{ env.DROPLET_IP }} << EOF
+            docker pull ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_IMAGE }}:latest
+            docker stop ${{ env.DOCKERHUB_IMAGE }}-container || true
+            docker rm ${{ env.DOCKERHUB_IMAGE }}-container || true
+            docker run -d --name ${{ env.DOCKERHUB_IMAGE }}-container -p ${{ env.DOCKER_PORT }}:${{ env.DOCKER_PORT }} ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_IMAGE }}:latest
+          EOF
