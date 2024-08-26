@@ -3,7 +3,6 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { clientPool, veterinaryPool } = require('./Config/db');
-const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
